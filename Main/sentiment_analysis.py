@@ -6,7 +6,7 @@ import pandas as pd
 import math
 import datetime as dt
 # Importing the dataset
-filename = '../Data/reviews_original.csv'
+filename = '/Users/shreyashkajabwar/Desktop/AirBnbPricePrediction/Data/reviews_original.csv'
 data = pd.read_csv(filename)
 #join on id and listing id
 
@@ -15,9 +15,8 @@ data = pd.DataFrame.drop(data, columns=[
     'date',
     'reviewer_id',
     'reviewer_name'
-
-
 ])
+
 def calculate_sentiment(entry):
     if (type(entry) != str and math.isnan(entry)):
         return -55
@@ -28,4 +27,6 @@ def calculate_sentiment(entry):
 data['comments'] = data['comments'].apply(calculate_sentiment)
 data = data[data['comments'] != -55]
 data = data.groupby('listing_id')['comments']. mean()
-data.to_csv('../Data/reviews_cleaned.csv')
+
+# Use absolute path for output file
+data.to_csv('/Users/shreyashkajabwar/Desktop/AirBnbPricePrediction/Data/reviews_cleaned.csv')
