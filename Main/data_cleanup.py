@@ -10,8 +10,8 @@ import pandas as pd
 import math
 import datetime as dt
 # Importing the dataset
-filename = '../Data/listings.csv'
-reviews_filename = '../Data/reviews_cleaned.csv'
+filename = '/Users/shreyashkajabwar/Desktop/AirBnbPricePrediction/Data/listings.csv'  # Use absolute path
+reviews_filename = '/Users/shreyashkajabwar/Desktop/AirBnbPricePrediction/Data/reviews_original.csv'  # Use absolute path
 data = pd.read_csv(filename)
 reviews = pd.read_csv(reviews_filename, names = ['listing_id', 'comments'])
 # print(data.info)
@@ -22,7 +22,7 @@ reviews = pd.read_csv(reviews_filename, names = ['listing_id', 'comments'])
 
 # Taking out the unwanted columns
 print(len(data.columns))
-exit()
+#exit()
 data = pd.DataFrame.drop(data, columns=[
     'host_name',
     'notes', # Added PRK
@@ -86,7 +86,13 @@ print('Splitting host verifications')
 host_verification_set = set()
 
 def collect_host_verifications(entry):
+    # Check if entry is a float (NaN) before trying to use string methods
+    if isinstance(entry, float):
+        return []
+    
     entry_list = entry.replace("[", "").replace("]", "").replace("'", "").replace('"', "").replace(" ", "").split(',')
+    return entry_list
+
     for verification in entry_list:
         if (verification != "" and verification != 'None'):
             host_verification_set.add(verification +"_verification")
@@ -268,4 +274,6 @@ def clean_comments(entry):
         return 0
     return entry
 data['comments'] = data['comments'].apply(clean_comments)
-data.to_csv('../Data/data_cleaned.csv')
+
+# Use absolute path for output file
+data.to_csv('/Users/shreyashkajabwar/Desktop/AirBnbPricePrediction/Data/data_cleaned.csv')
