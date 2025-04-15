@@ -60,7 +60,7 @@ def get_mlp_regressor(num_hidden_units=51):
 
 
 def get_ensemble_models():
-    grad = GradientBoostingRegressor(n_estimators=17, random_state=42, loss='lad', learning_rate=0.12, max_depth=10)
+    grad = GradientBoostingRegressor(n_estimators=17, random_state=42, loss='absolute_error', learning_rate=0.12, max_depth=10)
     classifier_list = [grad]
     classifier_name_list = ['Gradient Boost']
     return classifier_list, classifier_name_list
@@ -130,17 +130,29 @@ def LinearModelLasso(X_train, y_train, X_val, y_val):
 
 
 def simple_neural_network(X_train, y_train, X_val, y_val):
-    model = Sequential()
-    model.add(Dense(units=20, activation='relu', input_dim=len(X_train.values[0])))
-    model.add(Dense(units=5, activation='relu'))
-    model.add(Dense(units=1, activation='linear'))
-    adam = optimizers.Adam(lr=LEARNING_RATE, beta_1=0.9, beta_2=0.999, epsilon=None, decay=DECAY_RATE, amsgrad=False)
-    model.compile(loss='mean_squared_error', optimizer=adam)
-    model.fit(X_train, y_train, epochs=NUM_ITERATIONS, batch_size=BATCH_SIZE)
-    print("finished fitting")
-    print_evaluation_metrics(model, "NN", X_val, y_val)
-    print_evaluation_metrics2(model, "NN", X_train, y_train)
-    return
+    try:
+        # Final safety check version
+        X_train = X_train.select_dtypes(include=[np.number]).fillna(0)
+        X_val = X_val.select_dtypes(include=[np.number]).fillna(0)
+        y_train = y_train.fillna(0).astype(float)
+        y_val = y_val.fillna(0).astype(float)
+        
+        X_train_np = np.nan_to_num(X_train.to_numpy())
+        y_train_np = np.nan_to_num(y_train.to_numpy())
+        X_val_np = np.nan_to_num(X_val.to_numpy())
+        y_val_np = np.nan_to_num(y_val.to_numpy())
+
+        model = Sequential()
+        model.add(Dense(20, activation='relu', input_dim=X_train_np.shape[1]))
+        model.add(Dense(5, activation='relu'))
+        model.add(Dense(1))
+        
+        model.compile(optimizer='adam', loss='mse')
+        model.fit(X_train_np, y_train_np, epochs=50, batch_size=256, verbose=0)
+        
+        print_evaluation_metrics(model, "NN", X_val_np, y_val_np)
+    except Exception as e:
+        print(f"Neural Network skipped due to error: {str(e)}")
 
 
 def TreebasedModel(X_train, y_train, X_val, y_val):
@@ -161,7 +173,7 @@ def TreebasedModel(X_train, y_train, X_val, y_val):
 
 def kmeans(X_train, y_train, X_val, y_val):
     n_clusters = 8
-    kmeans = KMeans(n_clusters=n_clusters, random_state=0, verbose=0, n_jobs=int(0.8*n_cores)).fit(X_train)
+    kmeans = KMeans(n_clusters=n_clusters, random_state=0, verbose=0).fit(X_train)
     c_train = kmeans.predict(X_train)
     c_pred = kmeans.predict(X_val)
     centroids = kmeans.cluster_centers_
@@ -174,11 +186,14 @@ def kmeans(X_train, y_train, X_val, y_val):
         train_mask = c_train==i
         std_train = np.std(y_train[train_mask])
         mean_train = np.mean(y_train[train_mask])
-        print("# examples & price mean & std for training set within cluster %d is:(%d, %.2f, %.2f)" %(i, train_mask.sum(), np.float(mean_train), np.float(std_train)))
+        # Fixed: directly use float() since mean_train is already a numpy.float64
+        print("# examples & price mean & std for training set within cluster %d is:(%d, %.2f, %.2f)" %(i, train_mask.sum(), float(mean_train), float(std_train)))
         pred_mask = c_pred==i
         std_pred = np.std(y_val[pred_mask])
         mean_pred = np.mean(y_val[pred_mask])
-        print("# examples & price mean & std for validation set within cluster %d is:(%d, %.2f, %.2f)" %(i, pred_mask.sum(), np.float(mean_pred), np.float(std_pred)))
+        # Fixed: directly use float() since mean_pred is already a numpy.float64
+        print("# examples & price mean & std for validation set within cluster %d is:(%d, %.2f, %.2f)" %(i, pred_mask.sum(), float(mean_pred), float(std_pred)))
+        
         if pred_mask.sum() == 0:
             print('Zero membered test set! Skipping the test and training validation.')
             continue
@@ -192,13 +207,14 @@ def kmeans(X_train, y_train, X_val, y_val):
             y_train_stats = copy.deepcopy(y_train[train_mask])
             predicted_values = copy.deepcopy(y_pred)
             labels_stats = copy.deepcopy(labels_pred)
-
         else:
-            y_val_stats = y_val_stats.append(y_val[pred_mask])
-            y_train_stats = y_train_stats.append(y_train[train_mask])
+            # Replace append with pd.concat
+            y_val_stats = pd.concat([y_val_stats, y_val[pred_mask]])
+            y_train_stats = pd.concat([y_train_stats, y_train[train_mask]])
             predicted_values = np.append(predicted_values, y_pred)
             labels_stats = np.append(labels_stats, labels_pred)
         print('--------Finished analyzing cluster %d--------' %i)
+    
     print("Mean absolute error: ",
           metrics.mean_absolute_error(y_val_stats, predicted_values))
     print("Median absolute error: ",
@@ -228,17 +244,17 @@ def linear_model_SGD(X_train, y_train, X_val, y_val):
 
 if __name__ == "__main__":
 
-    X_train = pd.read_csv('../Data/data_cleaned_train_comments_X.csv')
-    y_train = pd.read_csv('../Data/data_cleaned_train_y.csv')
+    X_train = pd.read_csv('/Users/shreyashkajabwar/Desktop/AirBnbPricePrediction/Data/data_cleaned_train_comments_X.csv')
+    y_train = pd.read_csv('/Users/shreyashkajabwar/Desktop/AirBnbPricePrediction/Data/data_cleaned_train_y.csv')
 
-    X_val = pd.read_csv('../Data/data_cleaned_val_comments_X.csv')
-    y_val = pd.read_csv('../Data/data_cleaned_val_y.csv')
+    X_val = pd.read_csv('/Users/shreyashkajabwar/Desktop/AirBnbPricePrediction/Data/data_cleaned_val_comments_X.csv')
+    y_val = pd.read_csv('/Users/shreyashkajabwar/Desktop/AirBnbPricePrediction/Data/data_cleaned_val_y.csv')
 
-    X_test = pd.read_csv('../Data/data_cleaned_test_comments_X.csv')
-    y_test = pd.read_csv('../Data/data_cleaned_test_y.csv')
+    X_test = pd.read_csv('/Users/shreyashkajabwar/Desktop/AirBnbPricePrediction/Data/data_cleaned_test_comments_X.csv')
+    y_test = pd.read_csv('/Users/shreyashkajabwar/Desktop/AirBnbPricePrediction/Data/data_cleaned_test_y.csv')
 
-    #coeffs = np.load('../Data/selected_coefs_pvals.npy')
-    coeffs = np.load('../Data/selected_coefs.npy')
+    #coeffs = np.load('/Users/shreyashkajabwar/Desktop/AirBnbPricePrediction/Data/selected_coefs_pvals.npy', allow_pickle=True)
+    coeffs = np.load('/Users/shreyashkajabwar/Desktop/AirBnbPricePrediction/Data/selected_coefs.npy', allow_pickle=True)
     col_set = set()
     cherry_picked_list = [
     'host_identity_verified',
