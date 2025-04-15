@@ -57,18 +57,18 @@ def split(dataset, val_frac=0.10, test_frac=0.10):
 
 if __name__ == "__main__":
 
-    dataset = pd.read_csv('../Data/data_cleaned.csv')
+    dataset = pd.read_csv('/Users/shreyashkajabwar/Desktop/AirBnbPricePrediction/Data/data_cleaned.csv')
 
     X_train, y_train, X_val, y_val, X_test, y_test = split(dataset)
 
     X_train, X_val, X_test = normalize(X_train, X_val, X_test)
-    X_train.to_csv('../Data/data_cleaned_train_comments_X.csv', header=True, index=False)
-    y_train.to_csv('../Data/data_cleaned_train_y.csv', header=True, index=False)
+    X_train.to_csv('/Users/shreyashkajabwar/Desktop/AirBnbPricePrediction/Data/data_cleaned_train_comments_X.csv', header=True, index=False)
+    y_train.to_csv('/Users/shreyashkajabwar/Desktop/AirBnbPricePrediction/Data/data_cleaned_train_y.csv', header=True, index=False)
 
-    X_val.to_csv('../Data/data_cleaned_val_comments_X.csv', header=True, index=False)
-    y_val.to_csv('../Data/data_cleaned_val_y.csv', header=True, index=False)
+    X_val.to_csv('/Users/shreyashkajabwar/Desktop/AirBnbPricePrediction/Data/data_cleaned_val_comments_X.csv', header=True, index=False)
+    y_val.to_csv('/Users/shreyashkajabwar/Desktop/AirBnbPricePrediction/Data/data_cleaned_val_y.csv', header=True, index=False)
 
-    X_test.to_csv('../Data/data_cleaned_test_comments_X.csv', header=True, index=False)
-    y_test.to_csv('../Data/data_cleaned_test_y.csv', header=True, index=False)
+    X_test.to_csv('/Users/shreyashkajabwar/Desktop/AirBnbPricePrediction/Data/data_cleaned_test_comments_X.csv', header=True, index=False)
+    y_test.to_csv('/Users/shreyashkajabwar/Desktop/AirBnbPricePrediction/Data/data_cleaned_test_y.csv', header=True, index=False)
 
     pass
